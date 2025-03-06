@@ -45,6 +45,16 @@
         box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
           rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
       }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-inline-start: 5px;
+        padding-inline-end: 10px;
+        span {
+          font-size: var(--font-large);
+        }
+      }
       ul {
         margin-inline: 10px;
         font-size: var(--font-normal);
@@ -85,26 +95,26 @@
         <section>
           <header>
             <h2>Backlog</h2>
-            <span></span>
+            <span id="backlogBadge"></span>
           </header>
           <hr />
-          <ul id="backlog"></ul>
+          <ul id="backlogList"></ul>
         </section>
         <section>
           <header>
             <h2>In Progress</h2>
-            <span></span>
+            <span id="progressBadge"></span>
           </header>
           <hr />
-          <ul id="inProgress"></ul>
+          <ul id="inProgressList"></ul>
         </section>
         <section>
           <header>
             <h2>Completed</h2>
-            <span></span>
+            <span id="completedBadge"></span>
           </header>
           <hr />
-          <ul id="completed"></ul>
+          <ul id="completedList"></ul>
         </section>
       </div>
     </main>
@@ -115,9 +125,9 @@
       const errorMessageElement = $.getElementById("error-message");
       const allSections = $.querySelectorAll("section");
       const allItems = $.querySelectorAll(".draggable-item");
-      const backlogElement = $.querySelector("#backlog");
-      const progressElement = $.querySelector("#inProgress");
-      const completedElement = $.querySelector("#completed");
+      const backlogElement = $.querySelector("#backlogList");
+      const progressElement = $.querySelector("#inProgressList");
+      const completedElement = $.querySelector("#completedList");
 
       formElement.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -146,6 +156,12 @@
         completedData.forEach((task) => {
           createList(completedElement, task);
         });
+        const backlogBadge = $.querySelector("#backlogBadge");
+        const progressBadge = $.querySelector("#progressBadge");
+        const completedBadge = $.querySelector("#completedBadge");
+        backlogBadge.innerHTML = backlogData.length;
+        progressBadge.innerHTML = progressData.length;
+        completedBadge.innerHTML = completedData.length;
       };
 
       function addTask() {
@@ -240,6 +256,12 @@
         localStorage.setItem("backlog", JSON.stringify(backlogArray));
         localStorage.setItem("progress", JSON.stringify(progressArray));
         localStorage.setItem("completed", JSON.stringify(completedArray));
+        const backlogBadge = $.querySelector("#backlogBadge");
+        const progressBadge = $.querySelector("#progressBadge");
+        const completedBadge = $.querySelector("#completedBadge");
+        backlogBadge.innerHTML = backlogArray.length;
+        progressBadge.innerHTML = progressArray.length;
+        completedBadge.innerHTML = completedArray.length;
       }
     </script>
   </body>
