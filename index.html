@@ -96,7 +96,7 @@
             <span></span>
           </header>
           <hr />
-          <ul id="in-progress"></ul>
+          <ul id="inProgress"></ul>
         </section>
         <section>
           <header>
@@ -116,7 +116,7 @@
       const allSections = $.querySelectorAll("section");
       const allItems = $.querySelectorAll(".draggable-item");
       const backlogElement = $.querySelector("#backlog");
-      const progressElement = $.querySelector("#in-progress");
+      const progressElement = $.querySelector("#inProgress");
       const completedElement = $.querySelector("#completed");
 
       formElement.addEventListener("submit", (event) => {
@@ -132,6 +132,13 @@
         });
       });
 
+      window.onload = () => {
+        const backlogData = JSON.parse( localStorage.getItem("backlog"));
+        backlogData.forEach(task=>{
+          createList(backlogElement,task)
+        })
+      };
+
       function addTask() {
         const formData = new FormData(formElement);
         const task = formData.get("task").toLowerCase().trim();
@@ -139,12 +146,16 @@
           handleEmptyTaskError();
         }
         formElement.reset();
+        createList(backlogElement,task)
+        saveTask();
+      }
+
+      function createList(target,task){
         const liElement = $.createElement("li");
         liElement.innerHTML = `<div>${task}</div>`;
         attachDragEvents(liElement);
         attachButtons(liElement);
-        backlogElement.appendChild(liElement);
-        saveTask();
+        target.appendChild(liElement);
       }
 
       function handleEmptyTaskError() {
@@ -203,14 +214,10 @@
 
       function saveTask() {
         const backlog = [];
-        backlogElement.querySelectorAll("div li").forEach((task) => {
+        backlogElement.querySelectorAll("div li div").forEach((task) => {
           backlog.push(task.textContent);
         });
-        const tasksList = {
-          backlog: backlog,
-        };
-        console.log(tasksList);
-        localStorage.setItem("tasks", JSON.stringify(backlog));
+        localStorage.setItem("backlog", JSON.stringify(backlog));
       }
     </script>
   </body>
