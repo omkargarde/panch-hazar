@@ -1,0 +1,30 @@
+@import "./styles/colors.css";
+@import "./styles/fonts.css";
+@import "./styles/button.css";
+@import "./styles/input.css";
+* {
+  background-color: var(--background-50);
+  color: var(--oxford-blue);
+  font-family: var(--font-family);
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+.mx-auto {
+  margin-inline: auto;
+}
+.center-body-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+}
+
+.button {
+  font-size: 1rem;
+  padding: 10px 20px;
+  justify-content: center;
+  align-content: center;
+  cursor: pointer;
+}
