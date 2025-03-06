@@ -1,4 +1,6 @@
 :root {
+  --background-surface:#efeae3
+
   --text-50: oklch(96.89% 0.016 211.04);
   --text-100: oklch(93.66% 0.032 216.17);
   --text-200: oklch(87.78% 0.062 214.25);

@@ -70,7 +70,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        & div {
+        div {
           flex: 1;
           background-color: inherit;
         }
@@ -118,6 +118,15 @@
         </section>
       </div>
     </main>
+    <dialog id="favDialog">
+      <form method="dialog">
+        <input type="text" name="task" placeholder="Add new task" value="" />
+        <div>
+          <button id="cancel" type="reset">Cancel</button>
+          <button id="submit" type="submit">Confirm</button>
+        </div>
+      </form>
+    </dialog>
     <script>
       const $ = document;
       const formElement = $.querySelector("form");
@@ -128,6 +137,9 @@
       const backlogElement = $.querySelector("#backlogList");
       const progressElement = $.querySelector("#inProgressList");
       const completedElement = $.querySelector("#completedList");
+      const dialog = $.getElementById("favDialog");
+      const confirmButton = $.getElementById("submit");
+      const cancelButton = $.getElementById("cancel");
 
       formElement.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -169,6 +181,7 @@
         const task = formData.get("task").toLowerCase().trim();
         if (task === "" || task === null || task === undefined) {
           handleEmptyTaskError();
+          return;
         }
         formElement.reset();
         createList(backlogElement, task);
@@ -226,10 +239,11 @@
         const parentLi = event.target.closest("li");
         const taskDiv = parentLi.querySelector("div");
         const currentTask = taskDiv.textContent;
-        const newTask = prompt("Edit Task:", currentTask);
-        if (newTask !== null && newTask.trim() !== "") {
-          taskDiv.textContent = newTask.trim();
-        }
+        // const newTask = prompt("Edit Task:", currentTask);
+        // if (newTask !== null && newTask.trim() !== "") {
+        //   taskDiv.textContent = newTask.trim();
+        // }
+        dialog.showModal(currentTask);
       }
 
       function handleDelete(event) {
