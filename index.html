@@ -180,6 +180,7 @@
         target.addEventListener("dragend", () => {
           target.classList.remove("dragged");
         });
+
       }
 
       function attachButtons(target) {
@@ -210,6 +211,7 @@
       function handleDelete(event) {
         const parentLi = event.target.closest("li");
         parentLi.remove();
+        saveTask();
       }
 
       function saveTask() {
