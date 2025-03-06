@@ -129,14 +129,23 @@
           event.preventDefault();
           const draggedElement = document.querySelector(".dragged");
           section.querySelector("ul").appendChild(draggedElement);
+          saveTask();
         });
       });
 
       window.onload = () => {
-        const backlogData = JSON.parse( localStorage.getItem("backlog"));
-        backlogData.forEach(task=>{
-          createList(backlogElement,task)
-        })
+        const backlogData = JSON.parse(localStorage.getItem("backlog"));
+        const progressData = JSON.parse(localStorage.getItem("progress"));
+        const completedData = JSON.parse(localStorage.getItem("completed"));
+        backlogData.forEach((task) => {
+          createList(backlogElement, task);
+        });
+        progressData.forEach((task) => {
+          createList(progressElement, task);
+        });
+        completedData.forEach((task) => {
+          createList(completedElement, task);
+        });
       };
 
       function addTask() {
@@ -146,11 +155,11 @@
           handleEmptyTaskError();
         }
         formElement.reset();
-        createList(backlogElement,task)
+        createList(backlogElement, task);
         saveTask();
       }
 
-      function createList(target,task){
+      function createList(target, task) {
         const liElement = $.createElement("li");
         liElement.innerHTML = `<div>${task}</div>`;
         attachDragEvents(liElement);
@@ -180,7 +189,6 @@
         target.addEventListener("dragend", () => {
           target.classList.remove("dragged");
         });
-
       }
 
       function attachButtons(target) {
@@ -215,11 +223,23 @@
       }
 
       function saveTask() {
-        const backlog = [];
-        backlogElement.querySelectorAll("div li div").forEach((task) => {
-          backlog.push(task.textContent);
+        const backlogArray = [];
+        const progressArray = [];
+        const completedArray = [];
+        backlogElement.querySelectorAll("ul li div").forEach((task) => {
+          backlogArray.push(task.textContent);
         });
-        localStorage.setItem("backlog", JSON.stringify(backlog));
+        progressElement.querySelectorAll("ul li div").forEach((task) => {
+          console.log(task.textContent);
+          progressArray.push(task.textContent);
+        });
+
+        completedElement.querySelectorAll("ul li div").forEach((task) => {
+          completedArray.push(task.textContent);
+        });
+        localStorage.setItem("backlog", JSON.stringify(backlogArray));
+        localStorage.setItem("progress", JSON.stringify(progressArray));
+        localStorage.setItem("completed", JSON.stringify(completedArray));
       }
     </script>
   </body>
