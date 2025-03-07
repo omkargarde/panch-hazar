@@ -45,6 +45,9 @@
         box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
           rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
       }
+      .dropzone {
+        border: 1px dashed var(--secondary-100);
+      }
       header {
         display: flex;
         align-items: center;
@@ -110,7 +113,7 @@
         <section>
           <header>
             <h2>Backlog</h2>
-            <span id="backlogBadge"></span>
+            <span id="backlogBadge">0</span>
           </header>
           <hr />
           <ul id="backlogList"></ul>
@@ -118,7 +121,7 @@
         <section>
           <header>
             <h2>In Progress</h2>
-            <span id="progressBadge"></span>
+            <span id="progressBadge">0</span>
           </header>
           <hr />
           <ul id="inProgressList"></ul>
@@ -126,7 +129,7 @@
         <section>
           <header>
             <h2>Completed</h2>
-            <span id="completedBadge"></span>
+            <span id="completedBadge">0</span>
           </header>
           <hr />
           <ul id="completedList"></ul>
@@ -171,8 +174,19 @@
       allSections.forEach((section) => {
         section.addEventListener("dragover", (event) => {
           event.preventDefault();
+          // dragged class is is attached on dragstart
           const draggedElement = document.querySelector(".dragged");
-          section.querySelector("ul").appendChild(draggedElement);
+          event.dataTransfer.dropEffect = "move";
+          const afterElement = getDragAfterElement(
+            section.querySelector("ul"),
+            event.clientY
+          );
+          const list = section.querySelector("ul");
+          if (afterElement == null) {
+            list.appendChild(draggedElement);
+          } else {
+            list.insertBefore(draggedElement, afterElement);
+          }
           saveTask();
         });
       });
@@ -197,6 +211,24 @@
         progressBadge.innerHTML = progressData.length;
         completedBadge.innerHTML = completedData.length;
       };
+
+      function getDragAfterElement(list, y) {
+        const draggableElements = [
+          ...list.querySelectorAll(".draggable-item:not(.dragged)"),
+        ];
+        return draggableElements.reduce(
+          (closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+              return { offset: offset, element: child };
+            } else {
+              return closest;
+            }
+          },
+          { offset: Number.NEGATIVE_INFINITY }
+        ).element;
+      }
 
       function addTask() {
         const formData = new FormData(formElement);
