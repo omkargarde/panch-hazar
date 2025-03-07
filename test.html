@@ -1,0 +1,163 @@
+<script>
+  const $ = document;
+  const formElement = $.querySelector("form");
+  const inputElement = $.querySelector("input");
+  const errorMessageElement = $.getElementById("error-message");
+  const allSections = $.querySelectorAll("section");
+  const allItems = $.querySelectorAll(".draggable-item");
+  const backlogElement = $.querySelector("#backlogList");
+  const progressElement = $.querySelector("#inProgressList");
+  const completedElement = $.querySelector("#completedList");
+  const dialog = $.getElementById("favDialog");
+  const confirmButton = $.getElementById("submit");
+  const cancelButton = $.getElementById("cancel");
+  const dialogInputElement = dialog.querySelector('input[type="text"]');
+
+  formElement.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addTask();
+  });
+
+  allSections.forEach((section) => {
+    section.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      const draggedElement = document.querySelector(".dragged");
+      section.querySelector("ul").appendChild(draggedElement);
+      saveTask();
+    });
+  });
+
+  window.onload = () => {
+    const backlogData = JSON.parse(localStorage.getItem("backlog")) || [];
+    const progressData = JSON.parse(localStorage.getItem("progress")) || [];
+    const completedData = JSON.parse(localStorage.getItem("completed")) || [];
+    backlogData.forEach((task) => {
+      createList(backlogElement, task);
+    });
+    progressData.forEach((task) => {
+      createList(progressElement, task);
+    });
+    completedData.forEach((task) => {
+      createList(completedElement, task);
+    });
+    const backlogBadge = $.querySelector("#backlogBadge");
+    const progressBadge = $.querySelector("#progressBadge");
+    const completedBadge = $.querySelector("#completedBadge");
+    backlogBadge.innerHTML = backlogData.length;
+    progressBadge.innerHTML = progressData.length;
+    completedBadge.innerHTML = completedData.length;
+  };
+
+  function addTask() {
+    const formData = new FormData(formElement);
+    const task = formData.get("task").toLowerCase().trim();
+    if (task === "" || task === null || task === undefined) {
+      handleEmptyTaskError();
+      return;
+    }
+    formElement.reset();
+    createList(backlogElement, task);
+    saveTask();
+  }
+
+  function createList(target, task) {
+    const liElement = $.createElement("li");
+    liElement.innerHTML = `<div>${task}</div>`;
+    attachDragEvents(liElement);
+    attachButtons(liElement);
+    target.appendChild(liElement);
+  }
+
+  function handleEmptyTaskError() {
+    inputElement.classList.add("error");
+    errorMessageElement.classList.add("error-message");
+    errorMessageElement.classList.remove("no-error");
+    errorMessageElement.innerHTML = "Empty task cannot be added";
+    setTimeout(() => {
+      inputElement.classList.remove("error");
+      errorMessageElement.classList.remove("error-message");
+      errorMessageElement.classList.add("no-error");
+      errorMessageElement.innerHTML = "";
+    }, 2000);
+  }
+
+  function attachDragEvents(target) {
+    target.setAttribute("draggable", true);
+    target.classList.add("draggable-item");
+    target.addEventListener("dragstart", () => {
+      target.classList.add("dragged");
+    });
+    target.addEventListener("dragend", () => {
+      target.classList.remove("dragged");
+    });
+  }
+
+  function attachButtons(target) {
+    const editButton = $.createElement("button");
+    editButton.innerHTML = "Edit";
+    editButton.addEventListener("click", (event) => {
+      handleEdit(event);
+    });
+    const deleteButton = $.createElement("button");
+    deleteButton.innerHTML = "Delete";
+    deleteButton.addEventListener("click", (event) => {
+      handleDelete(event);
+    });
+    target.appendChild(editButton);
+    target.appendChild(deleteButton);
+  }
+
+  function handleEdit(event) {
+    const parentLi = event.target.closest("li");
+    const taskDiv = parentLi.querySelector("div");
+    const currentTask = taskDiv.textContent;
+    dialogInputElement.value = currentTask;
+    dialog.showModal();
+
+    dialog.addEventListener(
+      "close",
+      () => {
+        if (dialog.returnValue === "submit") {
+          const newTask = dialogInputElement.value.trim();
+          if (newTask !== "") {
+            taskDiv.textContent = newTask;
+            saveTask();
+          }
+        }
+        dialogInputElement.value = "";
+      },
+      { once: true }
+    );
+  }
+
+  function handleDelete(event) {
+    const parentLi = event.target.closest("li");
+    parentLi.remove();
+    saveTask();
+  }
+
+  function saveTask() {
+    const backlogArray = [];
+    const progressArray = [];
+    const completedArray = [];
+    backlogElement.querySelectorAll("ul li div").forEach((task) => {
+      backlogArray.push(task.textContent);
+    });
+    progressElement.querySelectorAll("ul li div").forEach((task) => {
+      progressArray.push(task.textContent);
+    });
+
+    completedElement.querySelectorAll("ul li div").forEach((task) => {
+      completedArray.push(task.textContent);
+    });
+    localStorage.setItem("backlog", JSON.stringify(backlogArray));
+    localStorage.setItem("progress", JSON.stringify(progressArray));
+    localStorage.setItem("completed", JSON.stringify(completedArray));
+    const backlogBadge = $.querySelector("#backlogBadge");
+    const progressBadge = $.querySelector("#progressBadge");
+    const completedBadge = $.querySelector("#completedBadge");
+    backlogBadge.innerHTML = backlogArray.length;
+    progressBadge.innerHTML = progressArray.length;
+    completedBadge.innerHTML = completedArray.length;
+  }
+</script>
