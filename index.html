@@ -239,11 +239,11 @@
         const parentLi = event.target.closest("li");
         const taskDiv = parentLi.querySelector("div");
         const currentTask = taskDiv.textContent;
-        // const newTask = prompt("Edit Task:", currentTask);
-        // if (newTask !== null && newTask.trim() !== "") {
-        //   taskDiv.textContent = newTask.trim();
-        // }
-        dialog.showModal(currentTask);
+        const newTask = prompt("Edit Task:", currentTask);
+        if (newTask !== null && newTask.trim() !== "") {
+          taskDiv.textContent = newTask.trim();
+        }
+        // dialog.showModal(currentTask);
       }
 
       function handleDelete(event) {
