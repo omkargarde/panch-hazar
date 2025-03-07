@@ -53,6 +53,7 @@
         padding-inline-end: 10px;
         span {
           font-size: var(--font-large);
+          color: var(--text-500);
         }
       }
       ul {
@@ -77,6 +78,20 @@
       }
       .dragged {
         /* TODO */
+      }
+      dialog {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        margin: auto;
+        div {
+          padding-block: 10px;
+          justify-self: end;
+        }
+        &::backdrop {
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(8px);
+        }
       }
     </style>
   </head>
@@ -120,7 +135,13 @@
     </main>
     <dialog id="favDialog">
       <form method="dialog">
-        <input type="text" name="task" placeholder="Add new task" value="" />
+        <input
+          id="favDialogInput"
+          type="text"
+          name="task"
+          placeholder="Add new task"
+          value=""
+        />
         <div>
           <button id="cancel" type="reset">Cancel</button>
           <button id="submit" type="submit">Confirm</button>
@@ -138,6 +159,7 @@
       const progressElement = $.querySelector("#inProgressList");
       const completedElement = $.querySelector("#completedList");
       const dialog = $.getElementById("favDialog");
+      const dialogInputElement = $.querySelector("#favDialogInput");
       const confirmButton = $.getElementById("submit");
       const cancelButton = $.getElementById("cancel");
 
@@ -239,11 +261,28 @@
         const parentLi = event.target.closest("li");
         const taskDiv = parentLi.querySelector("div");
         const currentTask = taskDiv.textContent;
-        const newTask = prompt("Edit Task:", currentTask);
-        if (newTask !== null && newTask.trim() !== "") {
-          taskDiv.textContent = newTask.trim();
-        }
-        // dialog.showModal(currentTask);
+        // const newTask = prompt("Edit Task:", currentTask);
+        // if (newTask !== null && newTask.trim() !== "") {
+        //   taskDiv.textContent = newTask.trim();
+        // }
+        dialogInputElement.value = currentTask;
+        dialog.showModal(currentTask);
+
+        confirmButton.addEventListener(
+          "click",
+          () => {
+            const newTask = dialogInputElement.value.trim();
+            if (newTask !== "") {
+              taskDiv.textContent = newTask;
+              saveTask();
+            }
+            dialogInputElement.value = "";
+          },
+          { once: true }
+        );
+        cancelButton.addEventListener("click", () => {
+          dialog.close();
+        });
       }
 
       function handleDelete(event) {
