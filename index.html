@@ -1,350 +1,365 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kanban Board</title>
-    <link rel="stylesheet" href="./src/style.css" />
-    <style>
-      main {
-        padding: 20px;
-      }
-      form {
-        margin-block: 20px;
-        & label {
-          font-size: var(--font-normal);
-        }
-      }
-      input[type="text"] {
-        width: 530px;
-      }
-      .error-message {
-        display: block;
-        color: var(--primary-700);
-        transition: 0.5s;
-        font-size: var(--font-small);
-      }
-      .no-error {
-        display: none;
-        transition: 0.5s;
-        line-height: var(--font-small);
-      }
-      button {
-        font-size: var(--font-normal);
-      }
-      .container {
-        display: grid;
-        grid-auto-columns: minmax(300px, 600px);
-        grid-auto-flow: column;
-        gap: 20px;
-      }
-      section {
-        padding: 10px;
-        min-height: 70dvh;
-        border-radius: 10px;
-        box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
-          rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
-      }
-      .dropzone {
-        border: 1px dashed var(--secondary-100);
-      }
-      header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-inline-start: 5px;
-        padding-inline-end: 10px;
-        span {
-          font-size: var(--font-large);
-          color: var(--text-500);
-        }
-      }
-      ul {
-        margin-inline: 10px;
-        font-size: var(--font-normal);
-        list-style-type: none;
-        padding-block: 10px;
-        margin-inline: 0;
-      }
-      .draggable-item {
-        background-color: var(--background-100);
-        border-radius: 5px;
-        margin-block: 10px;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        div {
-          flex: 1;
-          background-color: inherit;
-        }
-      }
-      .dragged {
-        /* TODO */
-      }
-      dialog {
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        margin: auto;
-        div {
-          padding-block: 10px;
-          justify-self: end;
-        }
-        &::backdrop {
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(8px);
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>Kanban Board</h1>
-      <form action="">
-        <label>
-          <div>Add new task</div>
-          <input type="text" name="task" placeholder="Add new task" />
-          <button type="submit">Add</button>
-          <div class="no-error" id="error-message"></div>
-        </label>
-      </form>
-      <div class="container">
-        <section>
-          <header>
-            <h2>Backlog</h2>
-            <span id="backlogBadge">0</span>
-          </header>
-          <hr />
-          <ul id="backlogList"></ul>
-        </section>
-        <section>
-          <header>
-            <h2>In Progress</h2>
-            <span id="progressBadge">0</span>
-          </header>
-          <hr />
-          <ul id="inProgressList"></ul>
-        </section>
-        <section>
-          <header>
-            <h2>Completed</h2>
-            <span id="completedBadge">0</span>
-          </header>
-          <hr />
-          <ul id="completedList"></ul>
-        </section>
-      </div>
-    </main>
-    <dialog id="favDialog">
-      <form method="dialog">
-        <input
-          id="favDialogInput"
-          type="text"
-          name="task"
-          placeholder="Add new task"
-          value=""
-        />
-        <div>
-          <button id="cancel" type="reset">Cancel</button>
-          <button id="submit" type="submit">Confirm</button>
-        </div>
-      </form>
-    </dialog>
-    <script>
-      const $ = document;
-      const formElement = $.querySelector("form");
-      const inputElement = $.querySelector("input");
-      const errorMessageElement = $.getElementById("error-message");
-      const allSections = $.querySelectorAll("section");
-      const allItems = $.querySelectorAll(".draggable-item");
-      const backlogElement = $.querySelector("#backlogList");
-      const progressElement = $.querySelector("#inProgressList");
-      const completedElement = $.querySelector("#completedList");
-      const dialog = $.getElementById("favDialog");
-      const dialogInputElement = $.querySelector("#favDialogInput");
-      const confirmButton = $.getElementById("submit");
-      const cancelButton = $.getElementById("cancel");
 
-      formElement.addEventListener("submit", (event) => {
-        event.preventDefault();
-        addTask();
-      });
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Kanban Board</title>
+	<link rel="stylesheet" href="./src/style.css" />
+	<style>
+		main {
+			padding: 20px;
+		}
 
-      allSections.forEach((section) => {
-        section.addEventListener("dragover", (event) => {
-          event.preventDefault();
-          // dragged class is is attached on dragstart
-          const draggedElement = document.querySelector(".dragged");
-          event.dataTransfer.dropEffect = "move";
-          const afterElement = getDragAfterElement(
-            section.querySelector("ul"),
-            event.clientY
-          );
-          const list = section.querySelector("ul");
-          if (afterElement == null) {
-            list.appendChild(draggedElement);
-          } else {
-            list.insertBefore(draggedElement, afterElement);
-          }
-          saveTask();
-        });
-      });
+		form {
+			margin-block: 20px;
 
-      window.onload = () => {
-        const backlogData = JSON.parse(localStorage.getItem("backlog"));
-        const progressData = JSON.parse(localStorage.getItem("progress"));
-        const completedData = JSON.parse(localStorage.getItem("completed"));
-        backlogData.forEach((task) => {
-          createList(backlogElement, task);
-        });
-        progressData.forEach((task) => {
-          createList(progressElement, task);
-        });
-        completedData.forEach((task) => {
-          createList(completedElement, task);
-        });
-        const backlogBadge = $.querySelector("#backlogBadge");
-        const progressBadge = $.querySelector("#progressBadge");
-        const completedBadge = $.querySelector("#completedBadge");
-        backlogBadge.innerHTML = backlogData.length;
-        progressBadge.innerHTML = progressData.length;
-        completedBadge.innerHTML = completedData.length;
-      };
+			& label {
+				font-size: var(--font-normal);
+			}
+		}
 
-      function getDragAfterElement(list, y) {
-        const draggableElements = [
-          ...list.querySelectorAll(".draggable-item:not(.dragged)"),
-        ];
-        return draggableElements.reduce(
-          (closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-              return { offset: offset, element: child };
-            } else {
-              return closest;
-            }
-          },
-          { offset: Number.NEGATIVE_INFINITY }
-        ).element;
-      }
+		input[type="text"] {
+			width: 530px;
+		}
 
-      function addTask() {
-        const formData = new FormData(formElement);
-        const task = formData.get("task").toLowerCase().trim();
-        if (task === "" || task === null || task === undefined) {
-          handleEmptyTaskError();
-          return;
-        }
-        formElement.reset();
-        createList(backlogElement, task);
-        saveTask();
-      }
+		.error-message {
+			display: block;
+			color: var(--primary-700);
+			transition: 0.5s;
+			font-size: var(--font-small);
+		}
 
-      function createList(target, task) {
-        const liElement = $.createElement("li");
-        liElement.innerHTML = `<div>${task}</div>`;
-        attachDragEvents(liElement);
-        attachButtons(liElement);
-        target.appendChild(liElement);
-      }
+		.no-error {
+			display: none;
+			transition: 0.5s;
+			line-height: var(--font-small);
+		}
 
-      function handleEmptyTaskError() {
-        inputElement.classList.add("error");
-        errorMessageElement.classList.add("error-message");
-        errorMessageElement.classList.remove("no-error");
-        errorMessageElement.innerHTML = "Empty task cannot be added";
-        setTimeout(() => {
-          inputElement.classList.remove("error");
-          errorMessageElement.classList.remove("error-message");
-          errorMessageElement.classList.add("no-error");
-          errorMessageElement.innerHTML = "";
-        }, 2000);
-      }
+		button {
+			font-size: var(--font-normal);
+		}
 
-      function attachDragEvents(target) {
-        target.setAttribute("draggable", true);
-        target.classList.add("draggable-item");
-        target.addEventListener("dragstart", () => {
-          target.classList.add("dragged");
-        });
-        target.addEventListener("dragend", () => {
-          target.classList.remove("dragged");
-        });
-      }
+		.container {
+			display: grid;
+			grid-auto-columns: minmax(300px, 600px);
+			grid-auto-flow: column;
+			gap: 20px;
+		}
 
-      function attachButtons(target) {
-        const editButton = $.createElement("button");
-        editButton.innerHTML = "Edit";
-        editButton.addEventListener("click", (event) => {
-          handleEdit(event);
-        });
-        const deleteButton = $.createElement("button");
-        deleteButton.innerHTML = "Delete";
-        deleteButton.addEventListener("click", (event) => {
-          handleDelete(event);
-        });
-        target.appendChild(editButton);
-        target.appendChild(deleteButton);
-      }
+		section {
+			padding: 10px;
+			min-height: 70dvh;
+			border-radius: 10px;
+			box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+				rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+		}
 
-      function handleEdit(event) {
-        const parentLi = event.target.closest("li");
-        const taskDiv = parentLi.querySelector("div");
-        const currentTask = taskDiv.textContent;
+		.dropzone {
+			border: 1px dashed var(--secondary-100);
+		}
 
-        dialogInputElement.value = currentTask;
-        dialog.showModal(currentTask);
+		header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding-inline-start: 5px;
+			padding-inline-end: 10px;
 
-        confirmButton.addEventListener(
-          "click",
-          () => {
-            const newTask = dialogInputElement.value.trim();
-            if (newTask !== "") {
-              taskDiv.textContent = newTask;
-              saveTask();
-            }
-            dialogInputElement.value = "";
-          },
-          { once: true }
-        );
-        cancelButton.addEventListener("click", () => {
-          dialog.close();
-        });
-      }
+			span {
+				font-size: var(--font-large);
+				color: var(--text-500);
+			}
+		}
 
-      function handleDelete(event) {
-        const parentLi = event.target.closest("li");
-        parentLi.remove();
-        saveTask();
-      }
+		ul {
+			margin-inline: 10px;
+			font-size: var(--font-normal);
+			list-style-type: none;
+			padding-block: 10px;
+			margin-inline: 0;
+		}
 
-      function saveTask() {
-        const backlogArray = [];
-        const progressArray = [];
-        const completedArray = [];
-        backlogElement.querySelectorAll("ul li div").forEach((task) => {
-          backlogArray.push(task.textContent);
-        });
-        progressElement.querySelectorAll("ul li div").forEach((task) => {
-          console.log(task.textContent);
-          progressArray.push(task.textContent);
-        });
+		.draggable-item {
+			background-color: var(--background-100);
+			border-radius: 5px;
+			margin-block: 10px;
+			padding: 10px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
 
-        completedElement.querySelectorAll("ul li div").forEach((task) => {
-          completedArray.push(task.textContent);
-        });
-        localStorage.setItem("backlog", JSON.stringify(backlogArray));
-        localStorage.setItem("progress", JSON.stringify(progressArray));
-        localStorage.setItem("completed", JSON.stringify(completedArray));
-        const backlogBadge = $.querySelector("#backlogBadge");
-        const progressBadge = $.querySelector("#progressBadge");
-        const completedBadge = $.querySelector("#completedBadge");
-        backlogBadge.innerHTML = backlogArray.length;
-        progressBadge.innerHTML = progressArray.length;
-        completedBadge.innerHTML = completedArray.length;
-      }
-    </script>
-  </body>
+			div {
+				flex: 1;
+				background-color: inherit;
+			}
+		}
+
+		.dragged {
+			/* TODO */
+		}
+
+		dialog {
+			padding: 20px;
+			border-radius: 10px;
+			text-align: center;
+			margin: auto;
+
+			div {
+				padding-block: 10px;
+				justify-self: end;
+			}
+
+			&::backdrop {
+				background: rgba(0, 0, 0, 0.5);
+				backdrop-filter: blur(8px);
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<main>
+		<h1>Kanban Board</h1>
+		<form action="">
+			<label>
+				<div>Add new task</div>
+				<input type="text" name="task" placeholder="Add new task" />
+				<button type="submit">Add</button>
+				<div class="no-error" id="error-message"></div>
+			</label>
+		</form>
+		<div class="container">
+			<section>
+				<header>
+					<h2>Backlog</h2>
+					<span id="backlogBadge">0</span>
+				</header>
+				<hr />
+				<ul id="backlogList"></ul>
+			</section>
+			<section>
+				<header>
+					<h2>In Progress</h2>
+					<span id="progressBadge">0</span>
+				</header>
+				<hr />
+				<ul id="inProgressList"></ul>
+			</section>
+			<section>
+				<header>
+					<h2>Completed</h2>
+					<span id="completedBadge">0</span>
+				</header>
+				<hr />
+				<ul id="completedList"></ul>
+			</section>
+		</div>
+	</main>
+	<dialog id="favDialog">
+		<form method="dialog">
+			<input id="favDialogInput" type="text" name="task" placeholder="Add new task" value="" />
+			<div>
+				<button id="cancel" type="reset">Cancel</button>
+				<button id="submit" type="submit">Confirm</button>
+			</div>
+		</form>
+	</dialog>
+	<script>
+		const $ = document;
+		const formElement = $.querySelector("form");
+		const inputElement = $.querySelector("input");
+		const errorMessageElement = $.getElementById("error-message");
+		const allSections = $.querySelectorAll("section");
+		const allItems = $.querySelectorAll(".draggable-item");
+		const backlogElement = $.querySelector("#backlogList");
+		const progressElement = $.querySelector("#inProgressList");
+		const completedElement = $.querySelector("#completedList");
+		const dialog = $.getElementById("favDialog");
+		const dialogInputElement = $.querySelector("#favDialogInput");
+		const confirmButton = $.getElementById("submit");
+		const cancelButton = $.getElementById("cancel");
+
+		formElement.addEventListener("submit", (event) => {
+			event.preventDefault();
+			addTask();
+		});
+
+		allSections.forEach((section) => {
+			section.addEventListener("dragover", (event) => {
+				event.preventDefault();
+				// dragged class is is attached on dragstart
+				const draggedElement = document.querySelector(".dragged");
+				event.dataTransfer.dropEffect = "move";
+				const afterElement = getDragAfterElement(
+					section.querySelector("ul"),
+					event.clientY
+				);
+				const list = section.querySelector("ul");
+				if (afterElement == null) {
+					list.appendChild(draggedElement);
+				} else {
+					list.insertBefore(draggedElement, afterElement);
+				}
+				saveTask();
+			});
+		});
+
+		window.onload = () => {
+			const backlogData = JSON.parse(localStorage.getItem("backlog"));
+			const progressData = JSON.parse(localStorage.getItem("progress"));
+			const completedData = JSON.parse(localStorage.getItem("completed"));
+			backlogData.forEach((task) => {
+				createList(backlogElement, task);
+			});
+			progressData.forEach((task) => {
+				createList(progressElement, task);
+			});
+			completedData.forEach((task) => {
+				createList(completedElement, task);
+			});
+			const backlogBadge = $.querySelector("#backlogBadge");
+			const progressBadge = $.querySelector("#progressBadge");
+			const completedBadge = $.querySelector("#completedBadge");
+			backlogBadge.innerHTML = backlogData.length;
+			progressBadge.innerHTML = progressData.length;
+			completedBadge.innerHTML = completedData.length;
+		};
+
+		function getDragAfterElement(list, y) {
+			const draggableElements = [
+				...list.querySelectorAll(".draggable-item:not(.dragged)"),
+			];
+			return draggableElements.reduce(
+				(closest, child) => {
+					const box = child.getBoundingClientRect();
+					const offset = y - box.top - box.height / 2;
+					if (offset < 0 && offset > closest.offset) {
+						return { offset: offset, element: child };
+					} else {
+						return closest;
+					}
+				},
+				{ offset: Number.NEGATIVE_INFINITY }
+			).element;
+		}
+
+		function addTask() {
+			const formData = new FormData(formElement);
+			const task = formData.get("task").toLowerCase().trim();
+			if (task === "" || task === null || task === undefined) {
+				handleEmptyTaskError();
+				return;
+			}
+			formElement.reset();
+			createList(backlogElement, task);
+			saveTask();
+		}
+
+		function createList(target, task) {
+			const liElement = $.createElement("li");
+			liElement.innerHTML = `<div>${task}</div>`;
+			attachDragEvents(liElement);
+			attachButtons(liElement);
+			target.appendChild(liElement);
+		}
+
+		function handleEmptyTaskError() {
+			inputElement.classList.add("error");
+			errorMessageElement.classList.add("error-message");
+			errorMessageElement.classList.remove("no-error");
+			errorMessageElement.innerHTML = "Empty task cannot be added";
+			setTimeout(() => {
+				inputElement.classList.remove("error");
+				errorMessageElement.classList.remove("error-message");
+				errorMessageElement.classList.add("no-error");
+				errorMessageElement.innerHTML = "";
+			}, 2000);
+		}
+
+		function attachDragEvents(target) {
+			target.setAttribute("draggable", true);
+			target.classList.add("draggable-item");
+			target.addEventListener("dragstart", () => {
+				target.classList.add("dragged");
+			});
+			target.addEventListener("dragend", () => {
+				target.classList.remove("dragged");
+			});
+		}
+
+		function attachButtons(target) {
+			const editButton = $.createElement("button");
+			editButton.innerHTML = "Edit";
+			editButton.addEventListener("click", (event) => {
+				handleEdit(event);
+			});
+			const deleteButton = $.createElement("button");
+			deleteButton.innerHTML = "Delete";
+			deleteButton.addEventListener("click", (event) => {
+				handleDelete(event);
+			});
+			target.appendChild(editButton);
+			target.appendChild(deleteButton);
+		}
+
+		function handleEdit(event) {
+			const parentLi = event.target.closest("li");
+			const taskDiv = parentLi.querySelector("div");
+			const currentTask = taskDiv.textContent;
+
+			dialogInputElement.value = currentTask;
+			dialog.showModal(currentTask);
+
+			confirmButton.addEventListener(
+				"click",
+				() => {
+					const newTask = dialogInputElement.value.trim();
+					if (newTask !== "") {
+						taskDiv.textContent = newTask;
+						saveTask();
+					}
+					dialogInputElement.value = "";
+				},
+				{ once: true }
+			);
+			cancelButton.addEventListener("click", () => {
+				dialog.close();
+			});
+		}
+
+		function handleDelete(event) {
+			const parentLi = event.target.closest("li");
+			parentLi.remove();
+			saveTask();
+		}
+
+		function saveTask() {
+			const backlogArray = [];
+			const progressArray = [];
+			const completedArray = [];
+			backlogElement.querySelectorAll("ul li div").forEach((task) => {
+				backlogArray.push(task.textContent);
+			});
+			progressElement.querySelectorAll("ul li div").forEach((task) => {
+				console.log(task.textContent);
+				progressArray.push(task.textContent);
+			});
+
+			completedElement.querySelectorAll("ul li div").forEach((task) => {
+				completedArray.push(task.textContent);
+			});
+			localStorage.setItem("backlog", JSON.stringify(backlogArray));
+			localStorage.setItem("progress", JSON.stringify(progressArray));
+			localStorage.setItem("completed", JSON.stringify(completedArray));
+			const backlogBadge = $.querySelector("#backlogBadge");
+			const progressBadge = $.querySelector("#progressBadge");
+			const completedBadge = $.querySelector("#completedBadge");
+			backlogBadge.innerHTML = backlogArray.length;
+			progressBadge.innerHTML = progressArray.length;
+			completedBadge.innerHTML = completedArray.length;
+		}
+	</script>
+</body>
+
 </html>
